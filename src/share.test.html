@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><title>тесты share-снимка</title></head>
+<body><output id="output">running…</output>
+<script type="module">
+import { SNAPSHOT_VERSION, encodeSnapshot, decodeSnapshot } from './share.js';
+const out = document.querySelector('#output');
+const lines = [];
+const assert = (condition, message) => { if (!condition) throw new Error(message); lines.push(`✓ ${message}`); };
+const base = {
+  sourceLabel: 'owner/repo', analyzedAt: '8 октября 2026 г.', fileCount: 8, textBytes: 1280,
+  extensionCount: 4, maxDepth: 3, languages: [{ name: 'TypeScript', count: 3 }],
+  markers: { readme: true, license: false, manifests: true, tests: true, configs: true, ci: false },
+  metrics: [{ key: 'energy', label: 'энергия', score: 72, note: 'файлов: 8', evidence: [] }],
+  pet: { seed: 'abcd1234', mood: 'steady', accent: '#E4A84A', marking: '#C95A4A', energy: 72, curiosity: 68, chaos: 48, state: 'собран', stateNote: 'сейчас он собран.' },
+  fieldNote: 'структура архива.'
+};
+try {
+  const encoded = encodeSnapshot(base);
+  const decoded = decodeSnapshot(encoded);
+  assert(SNAPSHOT_VERSION === 2, 'uses snapshot schema version 2');
+  assert(decoded.sourceLabel === base.sourceLabel && decoded.metrics[0].score === 72, 'round-trips a compact snapshot');
+  for (const value of ['', 'not-base64', 'eyJ2ZXJzaW9uIjo5fQ', 'eyJ2ZXJzaW9uIjoyLCJzbmFwc2hvdCI6e319']) {
+    let rejected = false; try { decodeSnapshot(value); } catch { rejected = true; }
+    assert(rejected, `rejects malformed snapshot: ${value || '(empty)'}`);
+  }
+  const tampered = JSON.parse(atob(encoded.replaceAll('-', '+').replaceAll('_', '/') + '==='.slice((encoded.length + 3) % 4)));
+  tampered.snapshot.metrics[0].score = 999;
+  const bytes = new TextEncoder().encode(JSON.stringify(tampered));
+  let binary = ''; bytes.forEach((byte) => { binary += String.fromCharCode(byte); });
+  let rejected = false; try { decodeSnapshot(btoa(binary).replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', '')); } catch { rejected = true; }
+  assert(rejected, 'rejects out-of-range metric scores');
+  out.textContent = `${lines.join('\n')}\n\n${lines.length} assertions passed.`;
+} catch (error) { out.textContent = `✗ ${error.message}\n\n${lines.join('\n')}`; throw error; }
+</script></body></html>

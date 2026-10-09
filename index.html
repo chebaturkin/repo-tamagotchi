@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="посмотрите на структуру репозитория как на маленького питомца с характером.">
+  <meta name="theme-color" content="#f3e8d2">
+  <meta property="og:title" content="Repo Tamagotchi — характер репозитория">
+  <meta property="og:description" content="файлы, языки и настройки превращаются в маленького SVG-питомца.">
+  <meta property="og:type" content="website">
+  <title>Repo Tamagotchi — характер репозитория</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main-content">к содержимому</a>
+  <main id="main-content" class="site-shell" tabindex="-1">
+    <header class="masthead">
+      <a class="brand" href="./" aria-label="Repo Tamagotchi, на главную">
+        <svg class="brand__icon" viewBox="0 0 76 76" aria-hidden="true">
+          <path d="M18 66C24 49 30 37 39 28M39 28V11M39 28 59 14M39 28 58 44" fill="none" stroke="#183A37" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="39" cy="28" r="10" fill="#F3E8D2" stroke="#183A37" stroke-width="3"/>
+          <circle cx="39" cy="28" r="3" fill="#C95A4A"/>
+          <circle cx="39" cy="11" r="5" fill="#E4A84A" stroke="#183A37" stroke-width="3"/>
+          <circle cx="59" cy="14" r="5" fill="#C95A4A" stroke="#183A37" stroke-width="3"/>
+          <circle cx="58" cy="44" r="5" fill="#E4A84A" stroke="#183A37" stroke-width="3"/>
+        </svg>
+        <span class="brand__wordmark">Repo Tamagotchi</span>
+      </a>
+      <a class="masthead__help" href="README.md">как это устроено</a>
+    </header>
+
+    <section id="source-panel" class="source-panel panel" aria-labelledby="source-title">
+      <div class="source-panel__head">
+        <div>
+          <p class="eyebrow">полевой журнал репозитория</p>
+          <h1 id="source-title">посмотрим, какой характер у репозитория</h1>
+          <p class="source-panel__intro">вставьте публичную ссылку GitHub или принесите ZIP/папку. я посмотрю на структуру файлов и соберу из неё маленького питомца.</p>
+        </div>
+      </div>
+      <form id="source-form" class="source-form" aria-busy="false">
+        <label class="field-label" for="repo-url">публичный репозиторий GitHub</label>
+        <div class="source-form__row">
+          <input id="repo-url" name="repo-url" type="text" inputmode="url" placeholder="github.com/owner/repo" autocomplete="off" spellcheck="false" required aria-describedby="repo-help">
+          <button class="button button--primary" type="submit">посмотреть характер</button>
+        </div>
+        <p id="repo-help" class="field-help">подойдёт адрес вида `github.com/owner/repo`. приватные репозитории приложение не открывает.</p>
+        <div class="source-form__divider"><span>или</span></div>
+        <div class="source-form__row source-form__local-row" role="group" aria-label="локальные источники">
+          <label class="button button--outline" for="file-input">загрузить ZIP</label>
+          <label class="button button--outline" for="folder-input">выбрать папку</label>
+        </div>
+        <input id="folder-input" type="file" webkitdirectory directory multiple hidden>
+        <label class="dropzone" id="dropzone" for="file-input" role="button" aria-controls="file-input" tabindex="0">
+          <input id="file-input" type="file" accept=".zip,application/zip" hidden>
+          <svg class="dropzone__icon" viewBox="0 0 38 38" aria-hidden="true"><path d="M19 3v23M11 19l8 8 8-8M6 32h26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span><strong>перетащите ZIP или папку</strong><small>или нажмите, чтобы выбрать ZIP</small></span>
+        </label>
+      </form>
+      <p class="privacy-note">файлы читаются в браузере и никуда не отправляются. по ссылке к GitHub уходит только запрос на публичный архив.</p>
+      <div id="source-status" class="status" role="status" aria-live="polite"></div>
+    </section>
+
+    <section id="empty-state" class="empty-state panel" aria-labelledby="empty-title">
+      <svg class="empty-state__sprout" viewBox="0 0 100 100" aria-hidden="true"><path d="M51 88V47M51 57C34 59 22 48 20 29c17-1 30 6 31 28M51 48c4-18 16-27 33-26-1 18-11 29-33 30" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div>
+        <h2 id="empty-title">здесь пока тихо</h2>
+        <p>загрузите источник — здесь появится питомец, его характер и следы, по которым всё посчиталось.</p>
+      </div>
+    </section>
+
+    <section id="error-state" class="error-state panel" hidden role="alert" aria-live="assertive" aria-labelledby="error-title">
+      <div class="error-state__badge">!</div>
+      <div>
+        <h2 id="error-title" tabindex="-1">не получилось прочитать источник</h2>
+        <p id="error-message"></p>
+        <div class="error-state__actions">
+          <button id="error-zip" class="button button--primary" type="button">загрузить другой ZIP</button>
+          <button id="error-reset" class="button button--text" type="button">начать сначала</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="journal" hidden aria-labelledby="journal-title">
+      <div class="journal-meta">
+        <h2 tabindex="-1">характер репозитория</h2>
+        <p class="journal-meta__source" id="journal-source"></p>
+        <p class="journal-meta__date" id="journal-date"></p>
+      </div>
+
+      <div class="journal-grid">
+        <article class="pet-panel panel">
+          <div class="pet-stage" id="pet-stage" aria-label="питомец по сигналам репозитория">
+            <svg id="pet-svg" viewBox="0 0 420 360" role="img" aria-labelledby="pet-title pet-desc" xmlns="http://www.w3.org/2000/svg">
+              <title id="pet-title">питомец из структуры репозитория</title>
+              <desc id="pet-desc">векторная фигурка, которая меняется вместе с сигналами структуры</desc>
+              <path class="pet-ground" d="M70 300c55 17 225 18 282-2" fill="none" stroke="currentColor" stroke-width="2"/>
+              <g id="pet-aura" fill="none" stroke="currentColor" stroke-width="2" opacity=".25"><circle cx="210" cy="165" r="145" stroke-dasharray="2 12"/></g>
+              <g id="pet-body">
+                <path id="pet-tail" d="M105 232c-34 19-37 54-4 63 22 6 33-12 23-25-8-10-21-7-23 3" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round"/>
+                <path id="pet-shell" d="M112 229c0-74 35-126 98-126s98 52 98 126c0 55-38 73-98 73s-98-18-98-73Z" fill="#E4A84A" stroke="#183A37" stroke-width="7"/>
+                <path id="pet-belly" d="M145 224c0-44 24-76 65-76s65 32 65 76c0 31-26 46-65 46s-65-15-65-46Z" fill="#F3E8D2" stroke="#183A37" stroke-width="4"/>
+                <path id="pet-marking" d="M164 132c11-17 27-27 46-29v39c-16-1-30 4-42 15Z" fill="#C95A4A"/>
+                <path id="pet-antenna" d="M182 107c-2-28-16-42-32-48M238 107c2-28 16-42 32-48" fill="none" stroke="#183A37" stroke-width="5" stroke-linecap="round"/>
+                <circle id="pet-antenna-left" cx="149" cy="55" r="9" fill="#C95A4A" stroke="#183A37" stroke-width="4"/>
+                <circle id="pet-antenna-right" cx="271" cy="55" r="9" fill="#C95A4A" stroke="#183A37" stroke-width="4"/>
+                <g id="pet-eyes" fill="#183A37"><ellipse id="pet-eye-left" cx="174" cy="204" rx="10" ry="14"/><ellipse id="pet-eye-right" cx="246" cy="204" rx="10" ry="14"/></g>
+                <path id="pet-mouth" d="M195 228q15 15 30 0" fill="none" stroke="#183A37" stroke-width="4" stroke-linecap="round"/>
+                <g id="pet-cheeks" fill="#C95A4A" opacity=".85"><circle cx="151" cy="227" r="8"/><circle cx="269" cy="227" r="8"/></g>
+                <g id="pet-badges" fill="#183A37"><path d="M156 257l15 4-7 15-14-7Z"/><path d="M264 257l-15 4 7 15 14-7Z"/></g>
+              </g>
+            </svg>
+          </div>
+          <div class="pet-caption"><strong id="pet-state">готов к знакомству</strong><span id="pet-state-note">сначала принесите репозиторий.</span></div>
+        </article>
+
+        <article class="metrics-panel panel">
+          <div class="panel-head"><h2 id="journal-title">сигналы характера</h2></div>
+          <ul id="metrics" class="metrics-list" aria-label="сигналы характера питомца"></ul>
+          <details class="formula-details"><summary>откуда берутся числа</summary><p>каждое число — детерминированный сигнал из файлов, языков, документации, тестов и настроек. это не оценка качества, возраста или автора проекта. веса и правила собраны в <a href="README.md">README</a>.</p><code>score = clamp(round(35 + 65 × Σ(weight × signal)), 0, 100)</code></details>
+        </article>
+      </div>
+
+      <div class="evidence-grid">
+        <article class="evidence-panel panel">
+          <div class="evidence-panel__head"><h2>что нашлось в архиве</h2></div>
+          <div class="evidence-stats" id="evidence-stats"></div>
+          <div class="evidence-columns"><div><h3>языки</h3><ul id="language-list" class="evidence-list"></ul></div><div><h3>документы и правила</h3><ul id="marker-list" class="evidence-list"></ul></div></div>
+          <p class="evidence-note" id="field-note">питомец смотрит на структуру файлов. истории коммитов в архиве нет — и это нормально.</p>
+        </article>
+      </div>
+
+      <section class="actions-bar" role="group" aria-labelledby="actions-title">
+        <h2 id="actions-title" class="sr-only">действия с анализом</h2>
+        <button id="reanalyze" class="button button--primary" type="button">разобрать ещё раз</button>
+        <button id="copy-share" class="button button--outline" type="button">скопировать снимок</button>
+        <button id="export-svg" class="button button--outline" type="button">скачать SVG</button>
+        <button id="export-png" class="button button--outline" type="button">скачать PNG</button>
+        <button id="reset" class="button button--text" type="button">начать сначала</button>
+      </section>
+    </section>
+
+    <footer class="site-footer"><a href="README.md">формула и правила анализа</a></footer>
+  </main>
+  <script type="module" src="src/app.js"></script>
+</body>
+</html>

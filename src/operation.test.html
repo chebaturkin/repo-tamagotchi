@@ -1,0 +1,7 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><title>тесты очереди операций</title></head>
+<body><output id="output">running…</output><script type="module">
+import { createOperationGate } from './operation.js';
+const gate = createOperationGate(); const lines = []; const assert = (condition, message) => { if (!condition) throw new Error(message); lines.push(`✓ ${message}`); };
+try { const first = gate.start(); const second = gate.start(); assert(!gate.isCurrent(first), 'invalidates a superseded operation'); assert(gate.isCurrent(second), 'keeps the newest operation active'); gate.finish(second); assert(!gate.isCurrent(second), 'finish invalidates a completed operation'); document.querySelector('#output').textContent = `${lines.join('\n')}\n\n${lines.length} assertions passed.`; }
+catch (error) { document.querySelector('#output').textContent = `✗ ${error.message}`; throw error; }
+</script></body></html>

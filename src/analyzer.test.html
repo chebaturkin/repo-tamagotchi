@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>тесты фикстур анализатора</title>
+    <style>body { font: 16px monospace; margin: 2rem; white-space: pre-wrap; } .ok { color: #176b3a; } .fail { color: #a63232; }</style>
+  </head>
+  <body>
+    <h1>тесты фикстур analyzer.js</h1>
+    <output id="output">running…</output>
+    <script type="module">
+      import { analyzeEntries, normalizeEntries } from './analyzer.js';
+      import { SourceError, inflateRaw, parseGitHubUrl, parseZipBytes } from './sources.js';
+
+      const output = document.querySelector('#output');
+      const lines = [];
+      const assert = (condition, message) => {
+        if (!condition) throw new Error(message);
+        lines.push(`✓ ${message}`);
+      };
+
+      const fixture = [
+        { path: 'repo/README.md', bytes: 1200, text: '# Field notes\n' },
+        { path: 'repo/LICENSE', bytes: 1100, text: 'MIT License\n' },
+        { path: 'repo/package.json', bytes: 800, text: '{"scripts":{"test":"vitest"}}' },
+        { path: 'repo/src/index.ts', bytes: 4200, text: 'export const pet = true;\n' },
+        { path: 'repo/src/format.ts', bytes: 2900, text: 'export const format = () => "ok";\n' },
+        { path: 'repo/tests/index.test.ts', bytes: 1700, text: 'test("pet", () => {});\n' },
+        { path: 'repo/.github/workflows/check.yml', bytes: 600, text: 'name: check\n' },
+        { path: 'repo/tsconfig.json', bytes: 400, text: '{}\n' },
+        { path: 'repo/node_modules/ignored.js', bytes: 999999, text: 'ignored' },
+        { path: 'repo/dist/bundle.js', bytes: 999999, text: 'ignored' },
+        { path: 'repo/.git/config', bytes: 999999, text: 'ignored' },
+        { path: 'repo/icon.png', bytes: 999999, text: 'ignored' },
+        { path: 'repo/image.data', bytes: new Uint8Array([0, 255, 1, 2]) },
+      ];
+
+      const zipFixture = ({ name = 'file.txt', text = 'ok', method = 0, flags = 0 } = {}) => {
+        const encoder = new TextEncoder();
+        const nameBytes = encoder.encode(name);
+        const content = encoder.encode(text);
+        const localLength = 30 + nameBytes.length + content.length;
+        const centralOffset = localLength;
+        const centralLength = 46 + nameBytes.length;
+        const bytes = new Uint8Array(localLength + centralLength + 22);
+        const view = new DataView(bytes.buffer);
+        view.setUint32(0, 0x04034b50, true);
+        view.setUint16(4, 20, true);
+        view.setUint16(6, flags, true);
+        view.setUint16(8, method, true);
+        view.setUint32(18, content.length, true);
+        view.setUint32(22, content.length, true);
+        view.setUint16(26, nameBytes.length, true);
+        bytes.set(nameBytes, 30);
+        bytes.set(content, 30 + nameBytes.length);
+        view.setUint32(centralOffset, 0x02014b50, true);
+        view.setUint16(centralOffset + 4, 20, true);
+        view.setUint16(centralOffset + 6, 20, true);
+        view.setUint16(centralOffset + 8, flags, true);
+        view.setUint16(centralOffset + 10, method, true);
+        view.setUint32(centralOffset + 20, content.length, true);
+        view.setUint32(centralOffset + 24, content.length, true);
+        view.setUint16(centralOffset + 28, nameBytes.length, true);
+        view.setUint32(centralOffset + 42, 0, true);
+        bytes.set(nameBytes, centralOffset + 46);
+        const eocd = centralOffset + centralLength;
+        view.setUint32(eocd, 0x06054b50, true);
+        view.setUint16(eocd + 8, 1, true);
+        view.setUint16(eocd + 10, 1, true);
+        view.setUint32(eocd + 12, centralLength, true);
+        view.setUint32(eocd + 16, centralOffset, true);
+        return { bytes, centralOffset, eocd };
+      };
+      const assertRejects = async (promise, code, message) => {
+        let error;
+        try { await promise; } catch (caught) { error = caught; }
+        assert(error instanceof SourceError && error.code === code, message);
+      };
+
+      (async () => {
+      try {
+        const normalized = normalizeEntries(fixture);
+        assert(normalized.length === 8, `ignores VCS, dependencies, builds, and binary files (kept ${normalized.length})`);
+        assert(normalized.every((entry) => !entry.path.startsWith('repo/')) && normalized.some((entry) => entry.path === 'LICENSE'), 'strips a shared archive root deterministically');
+        const report = analyzeEntries(fixture);
+        assert(report.summary.files === 8, 'counts included files');
+        assert(report.summary.bytes === 12900, 'sums approximate text bytes');
+        assert(report.summary.readme === true, 'detects README');
+        assert(report.summary.license === true, 'detects license');
+        assert(report.summary.manifests === 1, 'detects package manifest');
+        assert(report.summary.tests === 1, 'detects test files');
+        assert(report.summary.configs >= 2, 'detects CI and project configs');
+        assert(report.languages.TypeScript === 3, 'maps TypeScript extensions');
+        assert(report.scores.energy >= 35 && report.scores.energy <= 100, 'scores stay within 35..100');
+        assert(report.scores.chaos >= 35 && report.scores.chaos <= 100, 'chaos stays within 35..100');
+        assert(report.metrics === report.scores, 'exposes metrics alias for the UI');
+        assert(report.signals.energy.length > 0, 'retains explainable energy signals');
+        assert(report.pet && typeof report.pet.seed === 'string', 'generates deterministic pet state');
+
+        const first = JSON.stringify(analyzeEntries(fixture));
+        const second = JSON.stringify(analyzeEntries(fixture.slice().reverse()));
+        assert(first === second, 'same files produce the same report regardless of input order');
+        const empty = analyzeEntries([]);
+        assert(empty.empty === true && empty.summary.files === 0, 'returns a clear empty report for an empty archive');
+        const byteOnly = analyzeEntries([{ path: 'repo/package.json', bytes: new TextEncoder().encode('{"scripts":{"lint":"x","test":"x"}}') }]);
+        assert(byteOnly.summary.scripts === 2, 'decodes small byte entries for manifest signals');
+
+        assert(parseGitHubUrl('https://github.com/octo-org/repo.git/').repo === 'repo', 'accepts an exact GitHub owner/repo URL');
+        for (const value of [
+          'https://github.com/octo-org/repo/issues',
+          'https://github.com/octo-org/repo?tab=readme',
+          'https://github.com/octo-org/repo#readme',
+          'https://github.com/octo-org/repo.git/issues',
+          'https://github.com.evil.example/octo-org/repo',
+        ]) {
+          let rejected = false;
+          try { parseGitHubUrl(value); } catch (error) { rejected = error instanceof SourceError && error.code === 'invalid-url'; }
+          assert(rejected, `rejects non-canonical GitHub URL: ${value}`);
+        }
+
+        await assertRejects(parseZipBytes(new Uint8Array([0x50, 0x4b, 0x05])), 'corrupt', 'rejects a truncated ZIP record');
+        const truncatedName = zipFixture({ text: '' });
+        new DataView(truncatedName.bytes.buffer).setUint16(truncatedName.centralOffset + 28, 200, true);
+        await assertRejects(parseZipBytes(truncatedName.bytes), 'corrupt', 'rejects a truncated central-directory name');
+        const outOfRangeLocal = zipFixture({ text: '' });
+        const outOfRangeLocalView = new DataView(outOfRangeLocal.bytes.buffer);
+        outOfRangeLocalView.setUint16(26, 0xffff, true);
+        await assertRejects(parseZipBytes(outOfRangeLocal.bytes), 'corrupt', 'rejects local-header slices outside the ZIP');
+        await assertRejects(parseZipBytes(zipFixture({ method: 99 }).bytes), 'unsupported', 'rejects unsupported ZIP compression methods');
+        await assertRejects(parseZipBytes(zipFixture({ flags: 1, text: '' }).bytes), 'unsupported', 'rejects encrypted ZIP entries');
+        const compressedSample = new Uint8Array([0x33, 0x34, 0x32, 0x36, 0x31, 0x35, 0x33, 0xb7, 0xb0, 0x34, 0x30, 0x04, 0x00]);
+        await assertRejects(inflateRaw(compressedSample, 10), 'limit', 'stops a deflate stream before it exceeds the output limit');
+
+        output.className = 'ok';
+        output.textContent = lines.join('\n') + `\n\n${lines.length} assertions passed.`;
+      } catch (error) {
+        output.className = 'fail';
+        output.textContent = `✗ ${error.message}\n\n${lines.join('\n')}`;
+        throw error;
+      }
+      })();
+    </script>
+  </body>
+</html>

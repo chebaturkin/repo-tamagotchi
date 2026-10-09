@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8">
+    <title>тесты логики анализатора</title>
+    <style>body { font: 16px/1.5 monospace; margin: 2rem; white-space: pre-wrap; } .ok { color: #176b3a; } .fail { color: #a63232; }</style>
+  </head>
+  <body>
+    <h1>тесты логики analyzer.js</h1>
+    <output id="output">running…</output>
+    <script type="module">
+      import { analyzeEntries, normalizeEntries } from './analyzer.js';
+
+      const output = document.querySelector('#output');
+      const lines = [];
+      const assert = (condition, message) => {
+        if (!condition) throw new Error(message);
+        lines.push(`✓ ${message}`);
+      };
+      const bytes = (text) => new TextEncoder().encode(text).byteLength;
+
+      try {
+        const fixture = [
+          { path: 'repo/README', text: 'readme', bytes: bytes('readme') },
+          { path: 'repo/LICENSE', text: 'MIT', bytes: bytes('MIT') },
+          { path: 'repo/Dockerfile', text: 'FROM node:22', bytes: bytes('FROM node:22') },
+          { path: 'repo/Makefile', text: 'test:', bytes: bytes('test:') },
+          { path: 'repo/.env', text: 'MODE=test', bytes: bytes('MODE=test') },
+          { path: 'repo/package.json', text: '{"name":"pet"}', bytes: bytes('{"name":"pet"}') },
+          { path: 'repo/yarn.lock', text: '# lockfile', bytes: bytes('# lockfile') },
+          { path: 'repo/src/index.js', text: 'export const pet = true;', bytes: bytes('export const pet = true;') },
+          { path: 'repo/file.__proto__', text: 'edge case', bytes: bytes('edge case') },
+          { path: 'repo/image.png', bytes: new Uint8Array([137, 80, 78, 71]) },
+          { path: 'repo/payload.data', text: 'text\u0000with binary marker', bytes: bytes('text\u0000with binary marker') },
+        ];
+
+        const normalized = normalizeEntries(fixture);
+        assert(normalized.every((entry) => !entry.path.endsWith('image.png') && !entry.path.endsWith('payload.data')), 'drops known binary extensions and NUL text');
+
+        const report = analyzeEntries(fixture);
+        assert(report.summary.unknownExtensions === 1, 'recognizes extensionless repository files and reports one unknown extension');
+        assert(report.summary.extensionKinds === 5 && report.extensionCounts.__proto__ === 1, 'counts a __proto__ extension without changing the counter prototype');
+        assert(report.summary.manifests === 1, 'counts package.json as a manifest');
+        assert(report.summary.lockfiles === 1, 'counts yarn.lock as a lockfile');
+        assert(report.summary.configs >= 4, 'classifies Dockerfile, Makefile, .env, manifest, and lockfile as configs');
+
+        const includedTextBytes = ['readme', 'MIT', 'FROM node:22', 'test:', 'MODE=test', '{"name":"pet"}', '# lockfile', 'export const pet = true;', 'edge case']
+          .reduce((total, text) => total + bytes(text), 0);
+        assert(report.summary.bytes === includedTextBytes, 'summary.bytes sums included entry bytes');
+        assert(report.summary.textBytes === includedTextBytes, 'summary.textBytes matches summary.bytes');
+
+        const goReport = analyzeEntries([{ path: 'repo/go.sum', text: 'example.com/mod v1.0.0 h1:abc', bytes: bytes('example.com/mod v1.0.0 h1:abc') }]);
+        assert(goReport.summary.manifests === 0 && goReport.summary.lockfiles === 1, 'classifies go.sum as a lockfile rather than a manifest');
+
+        const original = [{ path: 'repo/src/index.js', text: 'aaaa', bytes: 4 }];
+        const changed = [{ path: 'repo/src/index.js', text: 'bbbb', bytes: 4 }];
+        assert(analyzeEntries(original).pet.seed !== analyzeEntries(changed).pet.seed, 'content signature changes the deterministic pet seed');
+
+        output.className = 'ok';
+        output.textContent = lines.join('\n') + `\n\n${lines.length} assertions passed.`;
+      } catch (error) {
+        output.className = 'fail';
+        output.textContent = `✗ ${error.message}\n\n${lines.join('\n')}`;
+        throw error;
+      }
+    </script>
+  </body>
+</html>
