@@ -128,7 +128,7 @@ export async function parseZipBytes(bytes) {
     cursor = recordStart + recordLength;
     if (flags & 1) throw new SourceError('unsupported', 'зашифрованные zip-записи не поддерживаются.');
     if (method !== 0 && method !== 8) throw new SourceError('unsupported', `метод сжатия zip (${method}) не поддерживается.`);
-    if (uncompressedSize > MAX_ZIP_UNCOMPRESSED_BYTES || totalUncompressed > MAX_ZIP_UNCOMPRESSED_BYTES - uncompressedSize) throw new SourceError('limit', `размер zip после распаковки не должен превышать ${Math.round(MAX_ZIP_UNCOMPRESSED_BYTES / (1024 * 1024))} МБ.`);
+    if (uncompressedSize > MAX_ZIP_UNCOMPRESSED_BYTES || totalUncompressed > MAX_ZIP_UNCOMPRESSED_BYTES - uncompressedSize) throw new SourceError('limit', `размер zip после распаковки не должен превышать ${Math.round(MAX_ZIP_UNCOMPRESSED_BYTES / (1024 * 1024))} мб.`);
     if (!name || name.endsWith('/')) continue;
     if (localOffset > bytes.length || localOffset + 30 > bytes.length || view.getUint32(localOffset, true) !== 0x04034b50) throw new SourceError('corrupt', 'локальная запись zip повреждена.');
     const localFlags = view.getUint16(localOffset + 6, true);
@@ -158,7 +158,7 @@ export async function filesToEntries(fileList) {
   const entries = [];
   let totalBytes = 0;
   for (const file of files) {
-    if (file.size > MAX_ZIP_UNCOMPRESSED_BYTES || totalBytes > MAX_ZIP_UNCOMPRESSED_BYTES - file.size) throw new SourceError('limit', `размер файлов не должен превышать ${Math.round(MAX_ZIP_UNCOMPRESSED_BYTES / (1024 * 1024))} МБ.`);
+    if (file.size > MAX_ZIP_UNCOMPRESSED_BYTES || totalBytes > MAX_ZIP_UNCOMPRESSED_BYTES - file.size) throw new SourceError('limit', `размер файлов не должен превышать ${Math.round(MAX_ZIP_UNCOMPRESSED_BYTES / (1024 * 1024))} мб.`);
     let bytes;
     try { bytes = new Uint8Array(await file.arrayBuffer()); }
     catch { throw new SourceError('corrupt', 'локальный файл не получилось прочитать в браузере.'); }

@@ -22,9 +22,9 @@ const operations = createOperationGate();
 
 const formatBytes = (bytes) => {
   const value = Math.max(0, Number(bytes) || 0);
-  if (value < 1024) return `${new Intl.NumberFormat('ru-RU').format(value)} Б`;
-  if (value < 1024 * 1024) return `${new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 1 }).format(value / 1024)} КБ`;
-  return `${new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 1 }).format(value / (1024 * 1024))} МБ`;
+  if (value < 1024) return `${new Intl.NumberFormat('ru-RU').format(value)} б`;
+  if (value < 1024 * 1024) return `${new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 1 }).format(value / 1024)} кб`;
+  return `${new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 1 }).format(value / (1024 * 1024))} мб`;
 };
 const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
 const localDate = () => new Intl.DateTimeFormat('ru-RU', { dateStyle: 'long', timeStyle: 'short' }).format(new Date());
@@ -255,7 +255,7 @@ ui.reanalyze.addEventListener('click', () => {
 });
 ui.copyShare.addEventListener('click', async () => {
   try { await navigator.clipboard.writeText(location.href); setStatus('снимок скопирован. в ссылке сохранён только результат.'); }
-  catch { setStatus('скопируйте адрес из строки браузера — снимок уже сохранён в ссылке.', true); }
+  catch { setStatus('скопируйте адрес из строки браузера. снимок уже сохранён в ссылке.', true); }
 });
 
 function exportSvgClone() {
