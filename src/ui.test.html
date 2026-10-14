@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="ru">
+<head><meta charset="utf-8"><title>проверка интерфейса</title>
+<style>body { font: 14px/1.6 monospace; } output { white-space: pre-wrap; } iframe { display: block; height: 1100px; border: 0; margin-top: 20px; }</style></head>
+<body><output id="output">running…</output><iframe title="проверяемое приложение"></iframe>
+<script type="module">
+const output = document.querySelector('output');
+const frame = document.querySelector('iframe');
+const lines = [];
+let loads = 0;
+const assert = (condition, message) => { if (!condition) throw new Error(message); lines.push(`✓ ${message}`); };
+const waitFor = async (condition) => {
+  for (let i = 0; i < 100; i++) { if (condition()) return; await new Promise(resolve => setTimeout(resolve, 30)); }
+  throw new Error('timed out waiting for the interface');
+};
+const load = async (width, hash = '') => {
+  frame.style.width = `${width}px`;
+  await new Promise(resolve => { frame.onload = resolve; frame.src = `../index.html?ui-test=${++loads}${hash}`; });
+  await frame.contentDocument.fonts.ready;
+  return frame.contentDocument;
+};
+try {
+  for (const width of [1440, 900, 768, 700, 390, 375, 320]) {
+    const doc = await load(width);
+    const buttons = doc.querySelector('.source-form__local-row').getBoundingClientRect();
+    const drop = doc.querySelector('#dropzone').getBoundingClientRect();
+    assert(drop.top - buttons.bottom >= 12, `${width}px: local buttons have space before the drop area`);
+    assert(doc.documentElement.scrollWidth <= width, `${width}px: no horizontal overflow`);
+    const input = doc.querySelector('#repo-url').getBoundingClientRect();
+    const submit = doc.querySelector('button[type="submit"]').getBoundingClientRect();
+    assert(input.right <= submit.left || input.bottom <= submit.top, `${width}px: submit never overlaps the URL field`);
+  }
+  const doc = await load(1200);
+  doc.querySelector('#try-example').click();
+  await waitFor(() => !doc.querySelector('#journal').hidden);
+  assert(doc.querySelectorAll('.metric').length === 5, 'example produces five real metrics');
+  assert(doc.activeElement === doc.querySelector('.journal-meta h2'), 'result receives keyboard focus');
+  const hash = frame.contentWindow.location.hash;
+  assert(hash.startsWith('#share='), 'example creates a shareable snapshot');
+  doc.querySelector('#copy-share').scrollIntoView({ block: 'center' });
+  doc.querySelector('#copy-share').click();
+  await waitFor(() => /скопирован|скопируйте/.test(doc.querySelector('#source-status').textContent));
+  assert(doc.querySelector('#source-status').getBoundingClientRect().height > 0, 'copy feedback remains visible with the form hidden');
+  const feedback = doc.querySelector('#source-status').getBoundingClientRect();
+  assert(feedback.top >= 0 && feedback.bottom <= frame.contentWindow.innerHeight, 'copy feedback appears beside the action within the viewport');
+  const restored = await load(375, hash);
+  await waitFor(() => !restored.querySelector('#journal').hidden);
+  assert(restored.querySelector('#reanalyze').disabled, 'restored snapshot disables analysis without source files');
+  restored.querySelector('#reset').click();
+  assert(!restored.querySelector('#source-panel').hidden, 'reset restores source selection');
+  assert(restored.activeElement === restored.querySelector('#source-title'), 'reset restores keyboard focus');
+  // A valid, stored, one-file zip exercises the actual drop path.
+  const filename = new TextEncoder().encode('README.md');
+  const content = new TextEncoder().encode('# small project');
+  let crc = 0xffffffff;
+  for (const byte of content) {
+    crc ^= byte;
+    for (let bit = 0; bit < 8; bit++) crc = (crc >>> 1) ^ ((crc & 1) ? 0xedb88320 : 0);
+  }
+  crc = (crc ^ 0xffffffff) >>> 0;
+  const archive = new Uint8Array(30 + filename.length + content.length + 46 + filename.length + 22);
+  const view = new DataView(archive.buffer);
+  view.setUint32(0, 0x04034b50, true); view.setUint16(4, 20, true);
+  view.setUint32(14, crc, true);
+  view.setUint32(18, content.length, true); view.setUint32(22, content.length, true); view.setUint16(26, filename.length, true);
+  archive.set(filename, 30); archive.set(content, 30 + filename.length);
+  const central = 30 + filename.length + content.length;
+  view.setUint32(central, 0x02014b50, true); view.setUint16(central + 6, 20, true);
+  view.setUint32(central + 16, crc, true);
+  view.setUint32(central + 20, content.length, true); view.setUint32(central + 24, content.length, true);
+  view.setUint16(central + 28, filename.length, true); archive.set(filename, central + 46);
+  const end = central + 46 + filename.length;
+  view.setUint32(end, 0x06054b50, true); view.setUint16(end + 8, 1, true); view.setUint16(end + 10, 1, true);
+  view.setUint32(end + 12, 46 + filename.length, true); view.setUint32(end + 16, central, true);
+  const win = frame.contentWindow;
+  const transfer = new win.DataTransfer();
+  transfer.items.add(new win.File([archive], 'small-project.zip', { type: 'application/zip' }));
+  restored.querySelector('#dropzone').dispatchEvent(new win.DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: transfer }));
+  await waitFor(() => !restored.querySelector('#journal').hidden || !restored.querySelector('#error-state').hidden);
+  assert(!restored.querySelector('#journal').hidden, 'dropping a zip analyzes its contents');
+  assert(restored.querySelector('#journal-source').textContent === 'small-project.zip', 'dropped zip preserves its source name');
+  output.textContent = `${lines.join('\n')}\n\n${lines.length} assertions passed.`;
+} catch (error) { output.textContent = `✗ ${error.message}\n\n${lines.join('\n')}`; throw error; }
+</script></body></html>

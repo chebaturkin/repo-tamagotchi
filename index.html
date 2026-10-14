@@ -4,18 +4,19 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="посмотрите на структуру репозитория как на маленького питомца с характером.">
-  <meta name="theme-color" content="#f3e8d2">
-  <meta property="og:title" content="Repo Tamagotchi — характер репозитория">
-  <meta property="og:description" content="файлы, языки и настройки превращаются в маленького SVG-питомца.">
+  <meta name="theme-color" content="#f5efdf">
+  <meta property="og:title" content="repo tamagotchi — питомец из вашего проекта">
+  <meta property="og:description" content="загрузите репозиторий и познакомьтесь с его питомцем. всё работает в браузере.">
+  <meta property="og:image" content="https://chebaturkin.github.io/repo-tamagotchi/docs/screenshots/start.png">
   <meta property="og:type" content="website">
-  <title>Repo Tamagotchi — характер репозитория</title>
+  <title>repo tamagotchi — питомец из вашего проекта</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <a class="skip-link" href="#main-content">к содержимому</a>
   <main id="main-content" class="site-shell" tabindex="-1">
     <header class="masthead">
-      <a class="brand" href="./" aria-label="Repo Tamagotchi, на главную">
+      <a class="brand" href="./" aria-label="repo tamagotchi, на главную">
         <svg class="brand__icon" viewBox="0 0 76 76" aria-hidden="true">
           <path d="M18 66C24 49 30 37 39 28M39 28V11M39 28 59 14M39 28 58 44" fill="none" stroke="#183A37" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
           <circle cx="39" cy="28" r="10" fill="#F3E8D2" stroke="#183A37" stroke-width="3"/>
@@ -24,49 +25,48 @@
           <circle cx="59" cy="14" r="5" fill="#C95A4A" stroke="#183A37" stroke-width="3"/>
           <circle cx="58" cy="44" r="5" fill="#E4A84A" stroke="#183A37" stroke-width="3"/>
         </svg>
-        <span class="brand__wordmark">Repo Tamagotchi</span>
+        <span class="brand__wordmark">repo tamagotchi</span>
       </a>
-      <a class="masthead__help" href="README.md">как это устроено</a>
+      <a class="masthead__help" href="https://github.com/chebaturkin/repo-tamagotchi#как-считается-характер">как это устроено</a>
     </header>
 
-    <section id="source-panel" class="source-panel panel" aria-labelledby="source-title">
-      <div class="source-panel__head">
-        <div>
-          <p class="eyebrow">полевой журнал репозитория</p>
-          <h1 id="source-title">посмотрим, какой характер у репозитория</h1>
-          <p class="source-panel__intro">вставьте публичную ссылку GitHub или принесите ZIP/папку. я посмотрю на структуру файлов и соберу из неё маленького питомца.</p>
+    <div id="intro-layout" class="intro-layout">
+      <section id="source-panel" class="source-panel" aria-labelledby="source-title">
+        <div class="source-panel__head">
+          <div>
+            <h1 id="source-title" tabindex="-1">превратите репозиторий в питомца</h1>
+            <p class="source-panel__intro">загрузите проект. его файлы, языки и настройки определят внешность и характер маленького существа.</p>
+          </div>
         </div>
-      </div>
-      <form id="source-form" class="source-form" aria-busy="false">
-        <label class="field-label" for="repo-url">публичный репозиторий GitHub</label>
-        <div class="source-form__row">
-          <input id="repo-url" name="repo-url" type="text" inputmode="url" placeholder="github.com/owner/repo" autocomplete="off" spellcheck="false" required aria-describedby="repo-help">
-          <button class="button button--primary" type="submit">посмотреть характер</button>
-        </div>
-        <p id="repo-help" class="field-help">подойдёт адрес вида `github.com/owner/repo`. приватные репозитории приложение не открывает.</p>
-        <div class="source-form__divider"><span>или</span></div>
-        <div class="source-form__row source-form__local-row" role="group" aria-label="локальные источники">
-          <label class="button button--outline" for="file-input">загрузить ZIP</label>
-          <label class="button button--outline" for="folder-input">выбрать папку</label>
-        </div>
-        <input id="folder-input" type="file" webkitdirectory directory multiple hidden>
-        <label class="dropzone" id="dropzone" for="file-input" role="button" aria-controls="file-input" tabindex="0">
+        <form id="source-form" class="source-form" aria-busy="false">
+          <label class="field-label" for="repo-url">ссылка на публичный репозиторий</label>
+          <div class="source-form__row">
+            <input id="repo-url" name="repo-url" type="text" inputmode="url" placeholder="github.com/owner/repo" autocomplete="off" spellcheck="false" required aria-describedby="repo-help">
+            <button class="button button--primary" type="submit">создать питомца <span aria-hidden="true">↗</span></button>
+          </div>
+          <p id="repo-help" class="field-help">адрес github можно вставить без https://</p>
+          <div class="source-form__divider"><span>или с компьютера</span></div>
+          <div class="source-form__row source-form__local-row" role="group" aria-label="локальные источники">
+            <button id="choose-zip" class="button button--outline" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M4 15v5h16v-5"/></svg>загрузить zip</button>
+            <button id="choose-folder" class="button button--outline" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7V5h7l2 3h9v12H3V7Z"/></svg>выбрать папку</button>
+          </div>
+          <input id="folder-input" type="file" webkitdirectory directory multiple hidden>
           <input id="file-input" type="file" accept=".zip,application/zip" hidden>
-          <svg class="dropzone__icon" viewBox="0 0 38 38" aria-hidden="true"><path d="M19 3v23M11 19l8 8 8-8M6 32h26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <span><strong>перетащите ZIP или папку</strong><small>или нажмите, чтобы выбрать ZIP</small></span>
-        </label>
-      </form>
-      <p class="privacy-note">файлы читаются в браузере и никуда не отправляются. по ссылке к GitHub уходит только запрос на публичный архив.</p>
-      <div id="source-status" class="status" role="status" aria-live="polite"></div>
-    </section>
-
-    <section id="empty-state" class="empty-state panel" aria-labelledby="empty-title">
-      <svg class="empty-state__sprout" viewBox="0 0 100 100" aria-hidden="true"><path d="M51 88V47M51 57C34 59 22 48 20 29c17-1 30 6 31 28M51 48c4-18 16-27 33-26-1 18-11 29-33 30" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <div>
-        <h2 id="empty-title">здесь пока тихо</h2>
-        <p>загрузите источник — здесь появится питомец, его характер и следы, по которым всё посчиталось.</p>
-      </div>
-    </section>
+          <button class="dropzone" id="dropzone" type="button" aria-controls="file-input">
+            <svg class="dropzone__icon" viewBox="0 0 38 38" aria-hidden="true"><path d="M19 3v23M11 19l8 8 8-8M6 32h26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span><strong>перетащите zip или папку сюда</strong><small>до 64 мб после распаковки</small></span>
+          </button>
+        </form>
+        <p class="privacy-note"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 10h12v10H6Zm3 0V7a3 3 0 0 1 6 0v3"/></svg><span>локальные файлы остаются в браузере. ссылка на github открывает только публичный архив.</span></p>
+        <section id="empty-state" class="empty-state" aria-label="пример питомца">
+          <div id="preview-stage" class="preview-stage" aria-hidden="true"></div>
+          <div class="preview-caption">
+            <p>разные проекты дают разных питомцев.</p>
+            <button id="try-example" class="button button--outline" type="button">посмотреть пример <span aria-hidden="true">→</span></button>
+          </div>
+        </section>
+      </section>
+    </div>
 
     <section id="error-state" class="error-state panel" hidden role="alert" aria-live="assertive" aria-labelledby="error-title">
       <div class="error-state__badge">!</div>
@@ -74,7 +74,7 @@
         <h2 id="error-title" tabindex="-1">не получилось прочитать источник</h2>
         <p id="error-message"></p>
         <div class="error-state__actions">
-          <button id="error-zip" class="button button--primary" type="button">загрузить другой ZIP</button>
+          <button id="error-zip" class="button button--primary" type="button">загрузить другой zip</button>
           <button id="error-reset" class="button button--text" type="button">начать сначала</button>
         </div>
       </div>
@@ -82,7 +82,7 @@
 
     <section id="journal" hidden aria-labelledby="journal-title">
       <div class="journal-meta">
-        <h2 tabindex="-1">характер репозитория</h2>
+        <h2 tabindex="-1">ваш питомец</h2>
         <p class="journal-meta__source" id="journal-source"></p>
         <p class="journal-meta__date" id="journal-date"></p>
       </div>
@@ -116,30 +116,30 @@
         <article class="metrics-panel panel">
           <div class="panel-head"><h2 id="journal-title">сигналы характера</h2></div>
           <ul id="metrics" class="metrics-list" aria-label="сигналы характера питомца"></ul>
-          <details class="formula-details"><summary>откуда берутся числа</summary><p>каждое число — детерминированный сигнал из файлов, языков, документации, тестов и настроек. это не оценка качества, возраста или автора проекта. веса и правила собраны в <a href="README.md">README</a>.</p><code>score = clamp(round(35 + 65 × Σ(weight × signal)), 0, 100)</code></details>
-        </article>
-      </div>
-
-      <div class="evidence-grid">
-        <article class="evidence-panel panel">
-          <div class="evidence-panel__head"><h2>что нашлось в архиве</h2></div>
-          <div class="evidence-stats" id="evidence-stats"></div>
-          <div class="evidence-columns"><div><h3>языки</h3><ul id="language-list" class="evidence-list"></ul></div><div><h3>документы и правила</h3><ul id="marker-list" class="evidence-list"></ul></div></div>
-          <p class="evidence-note" id="field-note">питомец смотрит на структуру файлов. истории коммитов в архиве нет — и это нормально.</p>
+          <details class="formula-details"><summary>как считается характер</summary><p>характеристики зависят от файлов, языков, документации, тестов и настроек. одинаковый архив всегда даёт одинаковый результат. формула описана в <a href="https://github.com/chebaturkin/repo-tamagotchi#как-считается-характер">readme</a>.</p><code>score = clamp(round(35 + 65 × Σ(weight × signal)), 0, 100)</code></details>
         </article>
       </div>
 
       <section class="actions-bar" role="group" aria-labelledby="actions-title">
-        <h2 id="actions-title" class="sr-only">действия с анализом</h2>
-        <button id="reanalyze" class="button button--primary" type="button">разобрать ещё раз</button>
-        <button id="copy-share" class="button button--outline" type="button">скопировать снимок</button>
-        <button id="export-svg" class="button button--outline" type="button">скачать SVG</button>
-        <button id="export-png" class="button button--outline" type="button">скачать PNG</button>
-        <button id="reset" class="button button--text" type="button">начать сначала</button>
+        <h2 id="actions-title" class="sr-only">действия с питомцем</h2>
+        <button id="copy-share" class="button button--primary" type="button">поделиться снимком</button>
+        <button id="export-svg" class="button button--outline" type="button">скачать svg</button>
+        <button id="export-png" class="button button--outline" type="button">скачать png</button>
+        <button id="reanalyze" class="button button--text" type="button">пересчитать</button>
+        <button id="reset" class="button button--text" type="button">другой проект <span aria-hidden="true">↗</span></button>
       </section>
-    </section>
+      <div class="evidence-grid">
+        <article class="evidence-panel panel">
+          <div class="evidence-panel__head"><h2>внутри проекта</h2></div>
+          <div class="evidence-stats" id="evidence-stats"></div>
+          <div class="evidence-columns"><div><h3>языки</h3><ul id="language-list" class="evidence-list"></ul></div><div><h3>документы и правила</h3><ul id="marker-list" class="evidence-list"></ul></div></div>
+          <p class="evidence-note" id="field-note">характер описывает структуру файлов. по нему нельзя судить о качестве кода или возрасте проекта.</p>
+        </article>
+      </div>
 
-    <footer class="site-footer"><a href="README.md">формула и правила анализа</a></footer>
+    </section>
+    <div id="source-status" class="status" role="status" aria-live="polite"></div>
+    <footer class="site-footer"><a href="https://github.com/chebaturkin/repo-tamagotchi">код на github <span aria-hidden="true">↗</span></a><a href="https://github.com/chebaturkin/repo-tamagotchi#приватность-и-ограничения">приватность и ограничения</a></footer>
   </main>
   <script type="module" src="src/app.js"></script>
 </body>

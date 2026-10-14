@@ -35,16 +35,16 @@ export async function fetchGitHubArchive(raw, signal) {
   try {
     response = await fetch(url, { mode: 'cors', signal, headers: { Accept: 'application/zip' } });
   } catch (error) {
-    if (error?.name === 'AbortError') throw new SourceError('timeout', 'GitHub не ответил вовремя. скачайте ZIP репозитория и загрузите его здесь.');
-    throw new SourceError('network', 'сеть или CORS не пропустили архив. скачайте ZIP репозитория и загрузите его здесь.');
+    if (error?.name === 'AbortError') throw new SourceError('timeout', 'github не ответил вовремя. скачайте zip репозитория и загрузите его здесь.');
+    throw new SourceError('network', 'сеть или cors не пропустили архив. скачайте zip репозитория и загрузите его здесь.');
   }
   if (!response.ok) {
-    if (response.status === 403 || response.status === 429) throw new SourceError('limit', 'GitHub ограничил запрос. скачайте ZIP репозитория и загрузите его здесь.');
-    if (response.status === 404) throw new SourceError('not-found', 'репозиторий не найден или закрыт. проверьте ссылку или загрузите ZIP.');
-    throw new SourceError('http', `GitHub вернул ошибку ${response.status}. скачайте ZIP репозитория и загрузите его здесь.`);
+    if (response.status === 403 || response.status === 429) throw new SourceError('limit', 'github ограничил запрос. скачайте zip репозитория и загрузите его здесь.');
+    if (response.status === 404) throw new SourceError('not-found', 'репозиторий не найден или закрыт. проверьте ссылку или загрузите zip.');
+    throw new SourceError('http', `github вернул ошибку ${response.status}. скачайте zip репозитория и загрузите его здесь.`);
   }
   const blob = await response.blob();
-  if (!blob.size) throw new SourceError('empty', 'архив пуст. скачайте ZIP ещё раз или выберите другой источник.');
+  if (!blob.size) throw new SourceError('empty', 'архив пуст. скачайте zip ещё раз или выберите другой источник.');
   const entries = await parseZipBlob(blob);
   return { entries, label: `${owner}/${repo}`, kind: 'github', rawUrl: raw };
 }
@@ -52,12 +52,12 @@ export async function fetchGitHubArchive(raw, signal) {
 export async function parseZipBlob(blob) {
   let bytes;
   try { bytes = new Uint8Array(await blob.arrayBuffer()); }
-  catch { throw new SourceError('corrupt', 'ZIP не удалось прочитать в браузере.'); }
+  catch { throw new SourceError('corrupt', 'zip не удалось прочитать в браузере.'); }
   return parseZipBytes(bytes);
 }
 
 export async function inflateRaw(bytes, maxBytes = MAX_ZIP_UNCOMPRESSED_BYTES) {
-  if (typeof DecompressionStream === 'undefined') throw new SourceError('unsupported', 'этот браузер не умеет распаковывать ZIP. попробуйте свежий Chrome, Safari или Firefox.');
+  if (typeof DecompressionStream === 'undefined') throw new SourceError('unsupported', 'этот браузер не умеет распаковывать zip. попробуйте свежий chrome, safari или firefox.');
   try {
     const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
     const reader = stream.getReader();
@@ -70,7 +70,7 @@ export async function inflateRaw(bytes, maxBytes = MAX_ZIP_UNCOMPRESSED_BYTES) {
         total += value.byteLength;
         if (total > maxBytes) {
           await reader.cancel();
-          throw new SourceError('limit', 'распакованный файл в ZIP превысил допустимый размер.');
+          throw new SourceError('limit', 'распакованный файл в zip превысил допустимый размер.');
         }
         chunks.push(value);
       }
@@ -83,36 +83,36 @@ export async function inflateRaw(bytes, maxBytes = MAX_ZIP_UNCOMPRESSED_BYTES) {
     return output;
   } catch (error) {
     if (error instanceof SourceError) throw error;
-    throw new SourceError('corrupt', 'в ZIP встретилась повреждённая сжатая запись.');
+    throw new SourceError('corrupt', 'в zip встретилась повреждённая сжатая запись.');
   }
 }
 
 export async function parseZipBytes(bytes) {
   if (!(bytes instanceof Uint8Array)) {
-    try { bytes = new Uint8Array(bytes); } catch { throw new SourceError('corrupt', 'ZIP не удалось прочитать в браузере.'); }
+    try { bytes = new Uint8Array(bytes); } catch { throw new SourceError('corrupt', 'zip не удалось прочитать в браузере.'); }
   }
-  if (bytes.length < 22) throw new SourceError('corrupt', 'это не похоже на ZIP-архив или архив повреждён.');
+  if (bytes.length < 22) throw new SourceError('corrupt', 'это не похоже на zip-архив или архив повреждён.');
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   let eocd = -1;
   for (let i = bytes.length - 22; i >= Math.max(0, bytes.length - 22 - 65535); i--) {
     if (view.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
   }
-  if (eocd < 0) throw new SourceError('corrupt', 'это не похоже на ZIP-архив или архив повреждён.');
+  if (eocd < 0) throw new SourceError('corrupt', 'это не похоже на zip-архив или архив повреждён.');
   const commentLength = view.getUint16(eocd + 20, true);
-  if (eocd + 22 + commentLength > bytes.length) throw new SourceError('corrupt', 'конец ZIP повреждён, файл нельзя разобрать.');
-  if (view.getUint16(eocd + 4, true) !== 0 || view.getUint16(eocd + 6, true) !== 0) throw new SourceError('unsupported', 'многотомные ZIP-архивы не поддерживаются.');
+  if (eocd + 22 + commentLength > bytes.length) throw new SourceError('corrupt', 'конец zip повреждён, файл нельзя разобрать.');
+  if (view.getUint16(eocd + 4, true) !== 0 || view.getUint16(eocd + 6, true) !== 0) throw new SourceError('unsupported', 'многотомные zip-архивы не поддерживаются.');
   const count = view.getUint16(eocd + 10, true);
-  if (count > MAX_ZIP_ENTRIES) throw new SourceError('limit', `в ZIP слишком много записей (не больше ${MAX_ZIP_ENTRIES.toLocaleString('ru-RU')}).`);
+  if (count > MAX_ZIP_ENTRIES) throw new SourceError('limit', `в zip слишком много записей (не больше ${MAX_ZIP_ENTRIES.toLocaleString('ru-RU')}).`);
   const centralOffset = view.getUint32(eocd + 16, true);
   const centralSize = view.getUint32(eocd + 12, true);
-  if (!count) throw new SourceError('empty', 'в ZIP нет файлов для анализа.');
-  if (centralOffset > bytes.length || centralSize > bytes.length - centralOffset || centralOffset + centralSize > eocd) throw new SourceError('corrupt', 'таблица ZIP находится за пределами файла.');
+  if (!count) throw new SourceError('empty', 'в zip нет файлов для анализа.');
+  if (centralOffset > bytes.length || centralSize > bytes.length - centralOffset || centralOffset + centralSize > eocd) throw new SourceError('corrupt', 'таблица zip находится за пределами файла.');
   const entries = [];
   let totalUncompressed = 0;
   let cursor = centralOffset;
   const decoder = new TextDecoder();
   for (let index = 0; index < count; index++) {
-    if (cursor + 46 > centralOffset + centralSize || view.getUint32(cursor, true) !== 0x02014b50) throw new SourceError('corrupt', 'таблица ZIP повреждена, файл нельзя разобрать.');
+    if (cursor + 46 > centralOffset + centralSize || view.getUint32(cursor, true) !== 0x02014b50) throw new SourceError('corrupt', 'таблица zip повреждена, файл нельзя разобрать.');
     const recordStart = cursor;
     const method = view.getUint16(cursor + 10, true);
     const flags = view.getUint16(cursor + 8, true);
@@ -123,31 +123,31 @@ export async function parseZipBytes(bytes) {
     const commentLength = view.getUint16(cursor + 32, true);
     const localOffset = view.getUint32(cursor + 42, true);
     const recordLength = 46 + nameLength + extraLength + commentLength;
-    if (recordLength > bytes.length - recordStart || recordStart + recordLength > centralOffset + centralSize) throw new SourceError('corrupt', 'таблица ZIP содержит обрезанную запись.');
+    if (recordLength > bytes.length - recordStart || recordStart + recordLength > centralOffset + centralSize) throw new SourceError('corrupt', 'таблица zip содержит обрезанную запись.');
     const name = decoder.decode(bytes.slice(cursor + 46, cursor + 46 + nameLength));
     cursor = recordStart + recordLength;
-    if (flags & 1) throw new SourceError('unsupported', 'зашифрованные ZIP-записи не поддерживаются.');
-    if (method !== 0 && method !== 8) throw new SourceError('unsupported', `метод сжатия ZIP (${method}) не поддерживается.`);
-    if (uncompressedSize > MAX_ZIP_UNCOMPRESSED_BYTES || totalUncompressed > MAX_ZIP_UNCOMPRESSED_BYTES - uncompressedSize) throw new SourceError('limit', `размер ZIP после распаковки не должен превышать ${Math.round(MAX_ZIP_UNCOMPRESSED_BYTES / (1024 * 1024))} МБ.`);
+    if (flags & 1) throw new SourceError('unsupported', 'зашифрованные zip-записи не поддерживаются.');
+    if (method !== 0 && method !== 8) throw new SourceError('unsupported', `метод сжатия zip (${method}) не поддерживается.`);
+    if (uncompressedSize > MAX_ZIP_UNCOMPRESSED_BYTES || totalUncompressed > MAX_ZIP_UNCOMPRESSED_BYTES - uncompressedSize) throw new SourceError('limit', `размер zip после распаковки не должен превышать ${Math.round(MAX_ZIP_UNCOMPRESSED_BYTES / (1024 * 1024))} МБ.`);
     if (!name || name.endsWith('/')) continue;
-    if (localOffset > bytes.length || localOffset + 30 > bytes.length || view.getUint32(localOffset, true) !== 0x04034b50) throw new SourceError('corrupt', 'локальная запись ZIP повреждена.');
+    if (localOffset > bytes.length || localOffset + 30 > bytes.length || view.getUint32(localOffset, true) !== 0x04034b50) throw new SourceError('corrupt', 'локальная запись zip повреждена.');
     const localFlags = view.getUint16(localOffset + 6, true);
     const localMethod = view.getUint16(localOffset + 8, true);
-    if (localFlags & 1) throw new SourceError('unsupported', 'зашифрованные ZIP-записи не поддерживаются.');
-    if (localMethod !== method) throw new SourceError('corrupt', 'методы сжатия в ZIP-записи не совпадают.');
+    if (localFlags & 1) throw new SourceError('unsupported', 'зашифрованные zip-записи не поддерживаются.');
+    if (localMethod !== method) throw new SourceError('corrupt', 'методы сжатия в zip-записи не совпадают.');
     const localNameLength = view.getUint16(localOffset + 26, true);
     const localExtraLength = view.getUint16(localOffset + 28, true);
     const start = localOffset + 30 + localNameLength + localExtraLength;
-    if (start > bytes.length || compressedSize > bytes.length - start) throw new SourceError('corrupt', 'ZIP содержит обрезанные данные файла.');
+    if (start > bytes.length || compressedSize > bytes.length - start) throw new SourceError('corrupt', 'zip содержит обрезанные данные файла.');
     const compressed = bytes.slice(start, start + compressedSize);
     let content;
     if (method === 0) content = compressed;
     else if (method === 8) content = await inflateRaw(compressed, Math.min(MAX_ZIP_UNCOMPRESSED_BYTES - totalUncompressed, uncompressedSize));
-    if (content.length !== uncompressedSize) throw new SourceError('corrupt', 'размер распакованного файла в ZIP не совпадает с заголовком.');
+    if (content.length !== uncompressedSize) throw new SourceError('corrupt', 'размер распакованного файла в zip не совпадает с заголовком.');
     totalUncompressed += content.length;
     entries.push({ path: normalizePath(name), bytes: content });
   }
-  if (!entries.length) throw new SourceError('empty', 'в ZIP нет файлов для анализа.');
+  if (!entries.length) throw new SourceError('empty', 'в zip нет файлов для анализа.');
   return entries;
 }
 

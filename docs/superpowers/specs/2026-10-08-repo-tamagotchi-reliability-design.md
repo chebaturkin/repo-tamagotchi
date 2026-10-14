@@ -1,8 +1,8 @@
-+# Repo Tamagotchi — reliability and UX design
++# repo tamagotchi — reliability and UX design
 
 ## Goal
 
-Make Repo Tamagotchi feel like a small, dependable field tool: it accepts a GitHub URL or local ZIP/folder, analyzes only browser-side repository structure, explains every score with concrete evidence, and presents the result in the existing terrarium journal visual system.
+Make repo tamagotchi feel like a small, dependable field tool: it accepts a GitHub URL or local ZIP/folder, analyzes only browser-side repository structure, explains every score with concrete evidence, and presents the result in the existing terrarium journal visual system.
 
 ## Decisions
 

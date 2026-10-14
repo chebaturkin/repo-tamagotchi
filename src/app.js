@@ -2,9 +2,11 @@ import { analyzeEntries } from './analyzer.js';
 import { SourceError, fetchGitHubArchive, filesToEntries, parseZipBlob, readDroppedItems } from './sources.js';
 import { ShareError, decodeSnapshot, encodeSnapshot } from './share.js';
 import { createOperationGate } from './operation.js';
+import { exampleEntries } from './example.js';
 
 const $ = (selector) => document.querySelector(selector);
 const ui = {
+  intro: $('#intro-layout'), tryExample: $('#try-example'), chooseZip: $('#choose-zip'), chooseFolder: $('#choose-folder'),
   sourcePanel: $('#source-panel'), sourceForm: $('#source-form'), url: $('#repo-url'), fileInput: $('#file-input'), folderInput: $('#folder-input'), dropzone: $('#dropzone'), status: $('#source-status'),
   empty: $('#empty-state'), error: $('#error-state'), errorMessage: $('#error-message'), errorZip: $('#error-zip'), errorReset: $('#error-reset'),
   journal: $('#journal'), source: $('#journal-source'), date: $('#journal-date'), petSvg: $('#pet-svg'), petState: $('#pet-state'), petStateNote: $('#pet-state-note'),
@@ -32,6 +34,9 @@ function setStatus(message = '', isError = false) {
   ui.status.classList.toggle('is-error', isError);
 }
 function showOnly(view) {
+  if (view === 'journal') $('.actions-bar').after(ui.status);
+  else ui.intro.after(ui.status);
+  ui.intro.hidden = view === 'journal';
   ui.sourcePanel.hidden = view === 'journal';
   ui.empty.hidden = view !== 'empty';
   ui.error.hidden = view !== 'error';
@@ -41,7 +46,7 @@ function showError(error, token = null) {
   if (token !== null && !operations.isCurrent(token)) return;
   const message = error instanceof SourceError || error instanceof ShareError
     ? error.message
-    : 'источник не получилось прочитать. загрузите ZIP с компьютера и попробуйте ещё раз.';
+    : 'источник не получилось прочитать. загрузите zip с компьютера и попробуйте ещё раз.';
   ui.errorMessage.textContent = message;
   setStatus('разбор не завершился. выберите другой источник.', true);
   showOnly('error');
@@ -50,28 +55,32 @@ function showError(error, token = null) {
 function setBusy(label) {
   setStatus(label);
   ui.sourceForm.setAttribute('aria-busy', 'true');
+  ui.tryExample.disabled = true;
   ui.sourceForm.querySelectorAll('button, input, label.button').forEach((node) => {
     node.setAttribute('aria-disabled', 'true');
     if ('disabled' in node) node.disabled = true;
   });
   const submit = ui.sourceForm.querySelector('button[type="submit"]');
-  if (submit) { submit.dataset.originalLabel ||= submit.textContent; submit.textContent = 'смотрю архив…'; }
+  if (submit) { submit.dataset.originalMarkup ||= submit.innerHTML; submit.textContent = 'читаю проект…'; }
 }
 function clearBusy() {
   ui.sourceForm.setAttribute('aria-busy', 'false');
+  ui.tryExample.disabled = false;
   ui.sourceForm.querySelectorAll('button, input, label.button').forEach((node) => {
     node.removeAttribute('aria-disabled');
     if ('disabled' in node) node.disabled = false;
   });
   const submit = ui.sourceForm.querySelector('button[type="submit"]');
-  if (submit) submit.textContent = submit.dataset.originalLabel || 'посмотреть характер';
+  if (submit) submit.innerHTML = submit.dataset.originalMarkup || 'создать питомца <span aria-hidden="true">↗</span>';
 }
 
 function buildSnapshot(result, sourceLabel) {
   const summary = result.summary || {};
   const metricLabels = { energy: 'энергия', curiosity: 'любопытство', resilience: 'устойчивость', chaos: 'хаос', experience: 'опыт' };
   const metrics = Object.entries(result.scores || {}).map(([key, score]) => {
-    const rows = result.signals?.[key] || [];
+    const rows = (result.signals?.[key] || []).map(row => row.key === 'bytes'
+      ? { ...row, detail: `объём текста: ${formatBytes(summary.textBytes ?? summary.bytes).toLocaleLowerCase('ru-RU')}` }
+      : row);
     return {
       key,
       label: metricLabels[key] || key,
@@ -90,23 +99,22 @@ function buildSnapshot(result, sourceLabel) {
   const avg = Math.round((metrics.reduce((sum, item) => sum + item.score, 0) || 0) / Math.max(1, metrics.length));
   const moodLabels = { quiet: 'спокоен', steady: 'собран', bright: 'живой', wild: 'буйный' };
   const mood = moodLabels[result.pet?.mood] || 'спокоен';
-  const moodNote = result.pet?.mood ? `сейчас он ${mood}.` : 'состояние рассчитано по структуре архива.';
   return {
     sourceLabel: String(sourceLabel || 'источник не указан'), analyzedAt: localDate(), fileCount: summary.files || 0,
     textBytes: summary.textBytes ?? summary.bytes ?? 0, extensionCount: summary.extensions || 0, maxDepth: summary.maxDepth || 0,
     languages: languageRows, markers, metrics,
-    pet: { ...result.pet, energy: result.scores?.energy ?? avg, curiosity: result.scores?.curiosity ?? avg, chaos: result.scores?.chaos ?? avg, state: mood, stateNote: `${moodNote} в архиве ${summary.files || 0} файлов.` },
-    fieldNote: 'питомец смотрит на структуру файлов. истории коммитов в архиве нет — и это нормально.',
+    pet: { ...result.pet, energy: result.scores?.energy ?? avg, curiosity: result.scores?.curiosity ?? avg, chaos: result.scores?.chaos ?? avg, state: mood, stateNote: `в архиве ${summary.files || 0} текстовых файлов.` },
+    fieldNote: 'характер описывает структуру файлов. по нему нельзя судить о качестве кода или возрасте проекта.',
   };
 }
 
 async function runAnalysis(entries, sourceLabel, { updateHash = true, token } = {}) {
-  if (!entries?.length) throw new SourceError('empty', 'в источнике нет файлов для анализа. выберите другой ZIP или папку.');
+  if (!entries?.length) throw new SourceError('empty', 'в источнике нет файлов для анализа. выберите другой zip или папку.');
   if (token !== undefined && !operations.isCurrent(token)) return;
   await new Promise((resolve) => requestAnimationFrame(resolve));
   if (token !== undefined && !operations.isCurrent(token)) return;
   const result = analyzeEntries(entries);
-  if (!result?.summary?.files) throw new SourceError('empty', 'после фильтрации не осталось текстовых файлов. проверьте ZIP или выберите другую папку.');
+  if (!result?.summary?.files) throw new SourceError('empty', 'после фильтрации не осталось текстовых файлов. проверьте zip или выберите другую папку.');
   if (token !== undefined && !operations.isCurrent(token)) return;
   currentEntries = entries;
   currentSource = sourceLabel;
@@ -114,7 +122,7 @@ async function runAnalysis(entries, sourceLabel, { updateHash = true, token } = 
   renderSnapshot(currentSnapshot);
   if (updateHash) setShareHash(currentSnapshot);
   showOnly('journal');
-  setStatus(`результат готов. файлов в журнале: ${currentSnapshot.fileCount}.`);
+  setStatus('');
   ui.journal.querySelector('h2')?.focus();
 }
 
@@ -123,7 +131,7 @@ function renderSnapshot(snapshot) {
   ui.date.textContent = snapshot.analyzedAt || 'локальное время';
   ui.petState.textContent = snapshot.pet?.state || 'неизвестный';
   ui.petStateNote.textContent = snapshot.pet?.stateNote || 'состояние рассчитано по структуре архива.';
-  ui.fieldNote.textContent = snapshot.fieldNote || 'питомец смотрит на структуру файлов. истории коммитов в архиве нет — и это нормально.';
+  ui.fieldNote.textContent = snapshot.fieldNote || 'характер описывает структуру файлов. по нему нельзя судить о качестве кода или возрасте проекта.';
   renderPet(snapshot.pet || {});
   ui.metrics.innerHTML = (snapshot.metrics || []).map((metric) => {
     const score = Math.max(0, Math.min(100, Number(metric.score) || 0));
@@ -132,9 +140,9 @@ function renderSnapshot(snapshot) {
   }).join('');
   const stats = [['fileCount', snapshot.fileCount, 'файлов'], ['textBytes', formatBytes(snapshot.textBytes), 'объём текста'], ['extensionCount', snapshot.extensionCount, 'расширений'], ['depth', snapshot.maxDepth, 'макс. глубина']];
   ui.evidenceStats.innerHTML = stats.map(([, value, label]) => `<div class="evidence-stat"><strong>${escapeHtml(value)}</strong><span>${escapeHtml(label)}</span></div>`).join('');
-  ui.languageList.innerHTML = (snapshot.languages || []).slice(0, 8).map((item) => `<li><span>${escapeHtml(item.name)}</span><em>${item.count}</em></li>`).join('') || '<li><span>языки не распознаны</span><em>нет</em></li>';
+  ui.languageList.innerHTML = (snapshot.languages || []).slice(0, 8).map((item) => `<li><span>${escapeHtml(item.name.toLocaleLowerCase('ru-RU'))}</span><em>${item.count}</em></li>`).join('') || '<li><span>языки не распознаны</span><em>нет</em></li>';
   const markers = snapshot.markers || {};
-  ui.markerList.innerHTML = [['README', markers.readme], ['лицензия', markers.license], ['манифест', markers.manifests], ['тесты', markers.tests], ['конфиги', markers.configs], ['CI', markers.ci]].map(([label, value]) => `<li><span>${label}</span><em>${value ? 'есть' : 'нет'}</em></li>`).join('');
+  ui.markerList.innerHTML = [['readme', markers.readme], ['лицензия', markers.license], ['манифест', markers.manifests], ['тесты', markers.tests], ['конфиги', markers.configs], ['ci', markers.ci]].map(([label, value]) => `<li><span>${label}</span><em>${value ? 'есть' : 'нет'}</em></li>`).join('');
 }
 
 function renderPet(pet) {
@@ -174,11 +182,18 @@ function beginLocalOperation(label) {
   return token;
 }
 
+ui.tryExample.addEventListener('click', async () => {
+  const token = beginLocalOperation('собираю питомца из примера');
+  try { await runAnalysis(exampleEntries, 'пример: small garden', { token }); }
+  catch (error) { if (operations.isCurrent(token)) showError(error, token); }
+  finally { if (operations.isCurrent(token)) { clearBusy(); operations.finish(token); } }
+});
+
 ui.sourceForm.addEventListener('submit', async (event) => {
   event.preventDefault();
   const raw = ui.url.value.trim();
-  if (!raw) { setStatus('вставьте ссылку github.com/owner/repo или выберите ZIP.', true); ui.url.focus(); return; }
-  const token = beginLocalOperation('скачиваю публичный архив GitHub');
+  if (!raw) { setStatus('вставьте ссылку github.com/owner/repo или выберите zip.', true); ui.url.focus(); return; }
+  const token = beginLocalOperation('скачиваю публичный архив github');
   analysisController = new AbortController();
   const controller = analysisController;
   const timeout = setTimeout(() => controller.abort(), 16000);
@@ -208,10 +223,18 @@ async function handleLocalFiles(fileList, fallbackLabel = 'локальный и
 
 ui.fileInput.addEventListener('change', () => handleLocalFiles(ui.fileInput.files));
 ui.folderInput.addEventListener('change', () => handleLocalFiles(ui.folderInput.files, 'локальная папка'));
-ui.dropzone.addEventListener('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); ui.fileInput.click(); } });
+ui.chooseZip.addEventListener('click', () => ui.fileInput.click());
+ui.chooseFolder.addEventListener('click', () => ui.folderInput.click());
+ui.dropzone.addEventListener('click', () => ui.fileInput.click());
 ['dragenter', 'dragover'].forEach((type) => ui.dropzone.addEventListener(type, (event) => { event.preventDefault(); ui.dropzone.classList.add('is-dragging'); }));
 ['dragleave', 'drop'].forEach((type) => ui.dropzone.addEventListener(type, (event) => { event.preventDefault(); ui.dropzone.classList.remove('is-dragging'); }));
 ui.dropzone.addEventListener('drop', async (event) => {
+  if (ui.dropzone.disabled) return;
+  const files = Array.from(event.dataTransfer.files || []);
+  if (files.length === 1 && (files[0].name.toLowerCase().endsWith('.zip') || files[0].type.includes('zip'))) {
+    await handleLocalFiles(files);
+    return;
+  }
   const token = beginLocalOperation('читаю файлы папки');
   try {
     const items = Array.from(event.dataTransfer.items || []);
@@ -243,11 +266,21 @@ ui.exportSvg.addEventListener('click', () => { if (currentSnapshot) { const svg 
 ui.exportPng.addEventListener('click', () => {
   if (!currentSnapshot) return;
   const svg = exportSvgClone(); const url = URL.createObjectURL(new Blob([svg.outerHTML], { type: 'image/svg+xml' })); const image = new Image();
-  image.onload = () => { const canvas = document.createElement('canvas'); canvas.width = 840; canvas.height = 720; const ctx = canvas.getContext('2d'); if (!ctx) { URL.revokeObjectURL(url); setStatus('PNG не удалось подготовить в этом браузере.', true); return; } ctx.drawImage(image, 0, 0); URL.revokeObjectURL(url); canvas.toBlob((png) => png ? download(png, 'repo-tamagotchi.png') : setStatus('PNG не удалось сохранить.', true), 'image/png'); };
-  image.onerror = () => { URL.revokeObjectURL(url); setStatus('SVG не удалось преобразовать в PNG.', true); }; image.src = url;
+  image.onload = () => { const canvas = document.createElement('canvas'); canvas.width = 840; canvas.height = 720; const ctx = canvas.getContext('2d'); if (!ctx) { URL.revokeObjectURL(url); setStatus('png не удалось подготовить в этом браузере.', true); return; } ctx.drawImage(image, 0, 0); URL.revokeObjectURL(url); canvas.toBlob((png) => png ? download(png, 'repo-tamagotchi.png') : setStatus('png не удалось сохранить.', true), 'image/png'); };
+  image.onerror = () => { URL.revokeObjectURL(url); setStatus('svg не удалось преобразовать в png.', true); }; image.src = url;
 });
 function download(blob, name) { if (!blob) return; const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = name; link.hidden = true; document.body.appendChild(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000); }
 function reset() { if (analysisController) analysisController.abort(); operations.cancel(); currentEntries = null; currentSource = ''; currentSnapshot = null; history.replaceState(null, '', location.pathname + location.search); ui.url.value = ''; ui.fileInput.value = ''; ui.folderInput.value = ''; ui.reanalyze.disabled = false; setStatus(''); clearBusy(); showOnly('empty'); ui.sourcePanel.querySelector('h1')?.focus(); }
+
+// Keep one drawing as the source for both the initial preview and exports.
+const exampleResult = analyzeEntries(exampleEntries);
+renderPet({ ...exampleResult.pet, ...exampleResult.scores });
+const preview = ui.petSvg.cloneNode(true);
+preview.removeAttribute('aria-labelledby');
+preview.removeAttribute('role');
+preview.removeAttribute('id');
+preview.querySelectorAll('[id]').forEach(node => node.removeAttribute('id'));
+$('#preview-stage').append(preview);
 
 if (!restoreShare()) showOnly('empty');
 

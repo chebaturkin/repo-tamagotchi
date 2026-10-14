@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** привести весь Repo Tamagotchi к ясному голосу Chebaturkin, выровнять интерфейс и README, исправить обнаруженные нестыковки и подготовить публичную GitHub Pages публикацию.
+**Goal:** привести весь repo tamagotchi к ясному голосу Chebaturkin, выровнять интерфейс и README, исправить обнаруженные нестыковки и подготовить публичную GitHub Pages публикацию.
 
 **Architecture:** оставить браузерный анализатор и существующий статический entrypoint. Сосредоточить редактуру в HTML, UI‑строках приложения, источниках ошибок и README; стиль привести к одной системе переменных и журнальной композиции. Публикацию вынести в GitHub Actions workflow, чтобы сайт собирался из корня без backend.
 

@@ -429,7 +429,7 @@ export const analyzeEntries = (entries = []) => {
     ],
     resilience: [
       evidence('tests', 'тесты', testsSignal, FORMULA.weights.resilience.tests, `тестовых файлов: ${testFiles}`),
-      evidence('ci', 'непрерывная проверка', ciSignal, FORMULA.weights.resilience.ci, ciSignal ? 'файлы CI найдены' : 'файлы CI не найдены'),
+      evidence('ci', 'непрерывная проверка', ciSignal, FORMULA.weights.resilience.ci, ciSignal ? 'файлы ci найдены' : 'файлы ci не найдены'),
       evidence('configs', 'настройки', configSignal, FORMULA.weights.resilience.configs, `конфигов: ${configFiles}`),
       evidence('lockfiles', 'зафиксированные зависимости', lockfileSignal, FORMULA.weights.resilience.lockfiles, lockfileSignal ? `lock-файлов: ${lockfiles}` : 'lock-файлов нет'),
     ],
@@ -443,7 +443,7 @@ export const analyzeEntries = (entries = []) => {
       evidence('manifests', 'файлы пакетов', manifestSignal, FORMULA.weights.experience.manifests, `файлов пакетов: ${manifests}`),
       evidence('docs', 'следы документации', docsSignal, FORMULA.weights.experience.docs, docsDetail),
       evidence('license', 'лицензия', license ? 1 : 0, FORMULA.weights.experience.license, license ? 'лицензия найдена' : 'лицензия не найдена'),
-      evidence('testsAndCi', 'тесты и CI', testsAndCiSignal, FORMULA.weights.experience.testsAndCi, `тестов: ${testFiles} · файлов CI: ${ciFiles}`),
+      evidence('testsAndCi', 'тесты и ci', testsAndCiSignal, FORMULA.weights.experience.testsAndCi, `тестов: ${testFiles} · файлов ci: ${ciFiles}`),
       evidence('configs', 'настройки', configSignal, FORMULA.weights.experience.configs, `конфигов: ${configFiles}`),
     ],
   };
