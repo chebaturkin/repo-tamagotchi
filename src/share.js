@@ -1,3 +1,5 @@
+import '../i18n.js';
+const t = (...args) => globalThis.I18n.t(...args);
 export const SNAPSHOT_VERSION = 2;
 
 const MAX_SOURCE_LENGTH = 240;
@@ -8,7 +10,7 @@ const COLOR_PATTERN = /^#[0-9a-f]{6}$/i;
 const SCORE_KEYS = new Set(['energy', 'curiosity', 'resilience', 'chaos', 'experience']);
 
 export class ShareError extends Error {
-  constructor(message = 'снимок ссылки повреждён.') {
+  constructor(message = t("s169")) {
     super(message);
     this.name = 'ShareError';
     this.code = 'share';

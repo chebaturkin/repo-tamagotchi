@@ -1,93 +1,109 @@
 # repo tamagotchi
 
-загрузите репозиторий и познакомьтесь с его питомцем. файлы, языки и настройки определяют внешность и пять характеристик: энергию, любопытство, устойчивость, хаос и опыт.
+english · [русский](README.ru.md)
 
-**[открыть приложение](https://chebaturkin.github.io/repo-tamagotchi/)** · [как запустить локально](#локальный-запуск)
+load a repository and meet its pet. files, languages and settings shape its appearance and five traits: energy, curiosity, resilience, chaos and experience.
 
-![первый экран repo tamagotchi: форма загрузки и пример питомца](docs/screenshots/start.png)
+**[open the app](https://chebaturkin.github.io/repo-tamagotchi/?lang=en)** · [run locally](#run-locally) · [русская версия](https://chebaturkin.github.io/repo-tamagotchi/?lang=ru)
 
-можно вставить публичную ссылку на github, выбрать zip или папку. чтобы сначала посмотреть на результат, нажмите «посмотреть пример»: небольшой учебный проект уже внутри приложения.
+![repo tamagotchi start screen with source form and example pet](docs/screenshots/en/start.png)
 
-рядом с каждой характеристикой можно раскрыть файлы и признаки, которые повлияли на число. кнопки под питомцем позволяют поделиться снимком, скачать svg или png, пересчитать результат и выбрать другой проект.
+paste a public github link, choose a zip or select a folder. “see an example” runs a small fictional project through the same analyzer.
+
+expand each trait to see the files and signals behind its score. the controls below the pet share a snapshot, download svg or png, recalculate, or choose another project.
+
+the compact **ru / en** control changes the interface in place and keeps your source and result. a valid `?lang=en` or `?lang=ru` link takes priority over the saved choice, the first supported browser language and english. repository names, filenames and language identifiers retain their original spelling.
 
 <details>
-<summary>результат анализа и мобильный экран</summary>
+<summary>analysis result and mobile screen</summary>
 
-![питомец, характеристики и найденные файлы после анализа репозитория](docs/screenshots/result.png)
-
-<p><img src="docs/screenshots/mobile.png" alt="мобильный экран repo tamagotchi с питомцем, примером и формой загрузки" width="390"></p>
+![a pet with scores and evidence after repository analysis](docs/screenshots/en/result.png)
+<p><img src="docs/screenshots/en/mobile.png" alt="repo tamagotchi source form and pet preview on a phone" width="390"></p>
 
 </details>
 
-## локальный запуск
+## run locally
 
 ```bash
 python3 -m http.server 4173
 ```
 
-откройте [локальный сайт](http://localhost:4173). сборка, установка пакетов и backend не нужны. шрифты и пример лежат в проекте, внешних библиотек у приложения нет.
+open the [local site](http://localhost:4173). no build, packages or backend are needed. fonts and the example are included; the application has no external libraries. use a local server for the browser modules.
 
-## источники
+## sources
 
-- **ссылка на github:** адрес вида `github.com/owner/repo`, с протоколом или без. приложение запрашивает публичный архив `codeload.github.com/owner/repo/zip/HEAD` без токена. если запрос не проходит из-за cors, лимита, таймаута или закрытого репозитория, можно загрузить zip;
-- **zip:** выберите архив кнопкой или перетащите на поле. поддерживаются обычные stored/deflate-записи, не больше 10 000 записей и 64 мб после распаковки;
-- **папка:** выберите папку целиком или перетащите её на поле. файлы читаются прямо в браузере.
+- **github link:** `github.com/owner/repo`, with or without a protocol. the app requests the public `codeload.github.com/owner/repo/zip/HEAD` archive without a token. upload a zip if cors, rate limits, a timeout or a private repository prevent the request.
+- **zip:** choose an archive or drop it on the form. ordinary stored/deflate entries are supported, with at most 10,000 entries and 64 mb after unpacking.
+- **folder:** choose or drop a complete folder. files are read directly in your browser.
 
-из анализа убираются `.git`, `node_modules`, сборочные каталоги и бинарные файлы. общий корень архива нормализуется: публичная ссылка и скачанный zip дают одинаковый результат.
+`.git`, `node_modules`, build directories and binary files are excluded. the common archive root is normalized: a public link and its downloaded zip give the same result.
 
-## как считается характер
+## how character is calculated
 
-это игрушка для наблюдения за структурой проекта. числа описывают файлы, языки, документацию и настройки; по ним нельзя судить о качестве кода, возрасте проекта или его авторе.
+a small toy for looking at project structure. the numbers describe files, languages, documentation and settings. they cannot tell you code quality, project age or anything about its author.
 
-у каждой характеристики шкала от 0 до 100. сначала считаются сигналы текстовых файлов, затем применяется формула:
+each trait has a 0 to 100 scale. text file signals are counted first, then this formula is applied:
 
 ```text
 score = clamp(round(35 + 65 × Σ(weight × signal)), 0, 100)
 ```
 
-нормализация использует фиксированные ориентиры: 500 файлов, 5 мб текста, 12 расширений, 6 языков и 6 уровней глубины. одинаковые файлы всегда дают одинаковый результат.
+normalization uses fixed references: 500 files, 5 mb of text, 12 extensions, 6 languages and 6 levels of depth. identical files always give identical scores.
 
-| характеристика | что на неё влияет |
+| trait | signals |
 | --- | --- |
-| энергия | количество файлов, объём текста, исходники и скрипты |
-| любопытство | языки, расширения, документация, примеры и notebooks |
-| устойчивость | тесты, ci, конфиги и lock-файлы |
-| хаос | разнообразие расширений, глубина путей, файлы в корне и неизвестные расширения |
-| опыт | манифесты, документация, лицензия, тесты, ci и конфиги |
+| energy | file count, text size, source files and scripts |
+| curiosity | languages, extensions, documentation, examples and notebooks |
+| resilience | tests, ci, configs and lockfiles |
+| chaos | extension diversity, path depth, root files and unknown extensions |
+| experience | manifests, documentation, license, tests, ci and configs |
 
-высокий хаос означает разнородную структуру. опыт отражает оформление проекта, а не его возраст. точные веса и правила находятся в [анализаторе](src/analyzer.js).
+high chaos means a varied structure. experience reflects project setup, not age. exact weights and rules are in the [analyzer](src/analyzer.js).
 
-## снимок и экспорт
+## snapshots and exports
 
-«поделиться снимком» копирует ссылку с компактным json-снимком версии 2 в hash-части адреса. ссылка восстанавливает питомца, характеристики и найденные признаки без исходного архива. содержимое файлов в неё не попадает.
+“share snapshot” copies a link with a compact version 2 json snapshot in its hash. the link restores the pet, traits and evidence without the original archive. file contents are not included.
 
-питомца можно скачать как svg или png. при открытии чужого снимка пересчёт отключён, потому что исходных файлов нет; кнопка «другой проект» возвращает к загрузке.
+download the pet as svg or png. recalculation is disabled for a shared snapshot because its source files are absent. “another project” returns to the source form. switching languages preserves the snapshot hash.
 
-## приватность и ограничения
+## privacy and limits
 
-локальные zip и папки никуда не загружаются. внешний запрос выполняется только для введённой публичной ссылки на github. приложение работает без api-ключей, авторизации, базы данных и внешней ai-модели.
+local zips and folders are never uploaded. the only external request is for the public github link you enter. there are no api keys, accounts, database or external ai model.
 
-повреждённые, зашифрованные, многотомные и неподдерживаемые zip-записи получают сообщение с предложением выбрать другой источник. количество записей и объём распаковки ограничены.
+damaged, encrypted, multipart and unsupported zip entries produce an error with a way to choose another source. entry count and unpacked size are bounded. the saved language preference is optional; blocked browser storage does not prevent using the app.
 
-## проверка
+## checks
 
-после локального запуска откройте тестовые страницы. результат каждой проверки виден в браузере:
+after starting the local server, open the test pages. results appear in the browser:
 
-- `src/analyzer.test.html`: чтение архивов и анализ;
-- `src/analyzer.logic.test.html`: классификация файлов и детерминированность;
-- `src/share.test.html`: формат снимка и повреждённые ссылки;
-- `src/operation.test.html`: управление асинхронными операциями;
-- `src/ui.test.html`: адаптивная вёрстка на семи ширинах, пример, фокус, обратная связь, восстановление снимка и перетаскивание zip.
+- `src/analyzer.test.html`: archive reading and analysis.
+- `src/analyzer.logic.test.html`: file classification and deterministic results.
+- `src/share.test.html`: snapshot format and damaged links.
+- `src/operation.test.html`: asynchronous operation management.
+- `src/ui.test.html`: responsive layout at seven widths, example, focus, feedback, snapshot restoration and zip drop.
 
-## публикация
+locale unit and browser checks:
 
-сайт публикуется из корня репозитория через `.github/workflows/pages.yml`. workflow запускается после push в `main` или вручную из вкладки actions.
+```bash
+node --test tests/i18n.test.cjs
+REPO_TAMAGOTCHI_URL=http://127.0.0.1:4173 node tests/i18n-browser.cjs
+```
 
-## шрифты
+update both language screenshot sets with:
 
-локальные шрифты лежат в `assets/fonts`. лицензии сохранены рядом:
+```bash
+REPO_TAMAGOTCHI_URL=http://127.0.0.1:4173 node tests/capture-screenshots.cjs
+```
 
-- fraunces: `assets/fonts/fraunces-OFL.txt`;
-- literata: `assets/fonts/literata-OFL.txt`;
-- onest: `assets/fonts/onest-OFL.txt`;
+## publication
+
+the repository root is published through `.github/workflows/pages.yml`. the workflow runs after a push to `main` or a manual run from actions.
+
+## fonts
+
+local fonts and their licenses are in `assets/fonts`:
+
+- fraunces: `assets/fonts/fraunces-OFL.txt`.
+- literata: `assets/fonts/literata-OFL.txt`.
+- onest: `assets/fonts/onest-OFL.txt`.
 - azeret mono: `assets/fonts/azeretmono-OFL.txt`.

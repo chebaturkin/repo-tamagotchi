@@ -9,6 +9,8 @@
     <h1>тесты фикстур analyzer.js</h1>
     <output id="output">running…</output>
     <script type="module">
+      import '../i18n.js';
+      I18n.setLocale('ru');
       import { analyzeEntries, normalizeEntries } from './analyzer.js';
       import { SourceError, inflateRaw, parseGitHubUrl, parseZipBytes } from './sources.js';
 

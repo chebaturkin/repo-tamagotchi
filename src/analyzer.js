@@ -1,3 +1,5 @@
+import '../i18n.js';
+const t = (key, ...args) => globalThis.I18n.t(key, ...args.map(value => typeof value === 'number' ? new Intl.NumberFormat(I18n.intlLocale).format(value) : value));
 /**
  * Deterministic, browser-only repository structure analysis.
  *
@@ -404,8 +406,8 @@ export const analyzeEntries = (entries = []) => {
   const unknownExtensions = files.filter((file) => !isRecognizedFile(file.path)).length;
   const extensionEntropy = normalizedEntropy(extensionCounts);
   const docsSignal = clamp((Number(readme) + Number(changelog) + Number(docsDirectories)) / 3);
-  const docsFound = [readme && 'README', changelog && 'CHANGELOG', docsDirectories && 'папка docs'].filter(Boolean);
-  const docsDetail = docsFound.length ? `документация: ${docsFound.join(', ')}` : 'документация не найдена';
+  const docsFound = [readme && 'README', changelog && 'CHANGELOG', docsDirectories && t("s102")].filter(Boolean);
+  const docsDetail = docsFound.length ? t("s103", docsFound.join(', ')) : t("s104");
   const examplesSignal = clamp((Number(examplesDirectories) + Math.min(1, notebooks + examples > 0 ? 1 : 0)) / 2);
   const testsSignal = clamp(testFiles / (0.25 * sourceFiles + 1));
   const ciSignal = ciFiles > 0 ? 1 : 0;
@@ -417,34 +419,34 @@ export const analyzeEntries = (entries = []) => {
 
   const signals = {
     energy: [
-      evidence('files', 'файлы', countNorm(fileCount, FORMULA.references.files), FORMULA.weights.energy.files, `файлов: ${fileCount}`),
-      evidence('bytes', 'объём текста', countNorm(bytes, FORMULA.references.bytes), FORMULA.weights.energy.bytes, `объём текста: ${bytes} байт`),
-      evidence('source', 'исходники и задачи', countNorm(sourceFiles + scripts, FORMULA.references.source), FORMULA.weights.energy.source, `исходный код: ${sourceFiles} · скрипты: ${scripts}`),
+      evidence('files', t("s105"), countNorm(fileCount, FORMULA.references.files), FORMULA.weights.energy.files, t("s106", fileCount)),
+      evidence('bytes', t("s74"), countNorm(bytes, FORMULA.references.bytes), FORMULA.weights.energy.bytes, t("s107", bytes)),
+      evidence('source', t("s108"), countNorm(sourceFiles + scripts, FORMULA.references.source), FORMULA.weights.energy.source, t("s109", sourceFiles, scripts)),
     ],
     curiosity: [
-      evidence('languages', 'языки', countNorm(languageKinds, FORMULA.references.languages), FORMULA.weights.curiosity.languages, `языков: ${languageKinds}`),
-      evidence('extensions', 'расширения', countNorm(extensionKinds, FORMULA.references.extensions), FORMULA.weights.curiosity.extensions, `расширений: ${extensionKinds}`),
-      evidence('docs', 'следы документации', docsSignal, FORMULA.weights.curiosity.docs, docsDetail),
-      evidence('examples', 'примеры и notebooks', examplesSignal, FORMULA.weights.curiosity.examples, `файлов с примерами: ${examples + notebooks}`),
+      evidence('languages', t("s42"), countNorm(languageKinds, FORMULA.references.languages), FORMULA.weights.curiosity.languages, t("s110", languageKinds)),
+      evidence('extensions', t("s111"), countNorm(extensionKinds, FORMULA.references.extensions), FORMULA.weights.curiosity.extensions, t("s112", extensionKinds)),
+      evidence('docs', t("s113"), docsSignal, FORMULA.weights.curiosity.docs, docsDetail),
+      evidence('examples', t("s114"), examplesSignal, FORMULA.weights.curiosity.examples, t("s115", examples + notebooks)),
     ],
     resilience: [
-      evidence('tests', 'тесты', testsSignal, FORMULA.weights.resilience.tests, `тестовых файлов: ${testFiles}`),
-      evidence('ci', 'непрерывная проверка', ciSignal, FORMULA.weights.resilience.ci, ciSignal ? 'файлы ci найдены' : 'файлы ci не найдены'),
-      evidence('configs', 'настройки', configSignal, FORMULA.weights.resilience.configs, `конфигов: ${configFiles}`),
-      evidence('lockfiles', 'зафиксированные зависимости', lockfileSignal, FORMULA.weights.resilience.lockfiles, lockfileSignal ? `lock-файлов: ${lockfiles}` : 'lock-файлов нет'),
+      evidence('tests', t("s80"), testsSignal, FORMULA.weights.resilience.tests, t("s116", testFiles)),
+      evidence('ci', t("s117"), ciSignal, FORMULA.weights.resilience.ci, ciSignal ? t("s118") : t("s119")),
+      evidence('configs', t("s120"), configSignal, FORMULA.weights.resilience.configs, t("s121", configFiles)),
+      evidence('lockfiles', t("s122"), lockfileSignal, FORMULA.weights.resilience.lockfiles, lockfileSignal ? t("s123", lockfiles) : t("s124")),
     ],
     chaos: [
-      evidence('entropy', 'разнообразие расширений', extensionEntropy, FORMULA.weights.chaos.entropy, `разнообразие расширений: ${extensionEntropy.toFixed(2).replace('.', ',')}`),
-      evidence('depth', 'глубина путей', countNorm(averageDepth, FORMULA.references.depth), FORMULA.weights.chaos.depth, `средняя глубина папок: ${averageDepth.toFixed(1).replace('.', ',')}`),
-      evidence('rootFiles', 'файлы в корне', countNorm(rootFiles, FORMULA.references.rootFiles), FORMULA.weights.chaos.rootFiles, `файлов в корне: ${rootFiles}`),
-      evidence('unknownExtensions', 'неясные расширения', unknownExtensionSignal, FORMULA.weights.chaos.unknownExtensions, `без понятного расширения: ${unknownExtensions}`),
+      evidence('entropy', t("s125"), extensionEntropy, FORMULA.weights.chaos.entropy, t("s126", new Intl.NumberFormat(I18n.intlLocale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(extensionEntropy))),
+      evidence('depth', t("s127"), countNorm(averageDepth, FORMULA.references.depth), FORMULA.weights.chaos.depth, t("s128", new Intl.NumberFormat(I18n.intlLocale, { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(averageDepth))),
+      evidence('rootFiles', t("s129"), countNorm(rootFiles, FORMULA.references.rootFiles), FORMULA.weights.chaos.rootFiles, t("s130", rootFiles)),
+      evidence('unknownExtensions', t("s131"), unknownExtensionSignal, FORMULA.weights.chaos.unknownExtensions, t("s132", unknownExtensions)),
     ],
     experience: [
-      evidence('manifests', 'файлы пакетов', manifestSignal, FORMULA.weights.experience.manifests, `файлов пакетов: ${manifests}`),
-      evidence('docs', 'следы документации', docsSignal, FORMULA.weights.experience.docs, docsDetail),
-      evidence('license', 'лицензия', license ? 1 : 0, FORMULA.weights.experience.license, license ? 'лицензия найдена' : 'лицензия не найдена'),
-      evidence('testsAndCi', 'тесты и ci', testsAndCiSignal, FORMULA.weights.experience.testsAndCi, `тестов: ${testFiles} · файлов ci: ${ciFiles}`),
-      evidence('configs', 'настройки', configSignal, FORMULA.weights.experience.configs, `конфигов: ${configFiles}`),
+      evidence('manifests', t("s133"), manifestSignal, FORMULA.weights.experience.manifests, t("s134", manifests)),
+      evidence('docs', t("s113"), docsSignal, FORMULA.weights.experience.docs, docsDetail),
+      evidence('license', t("s78"), license ? 1 : 0, FORMULA.weights.experience.license, license ? t("s135") : t("s136")),
+      evidence('testsAndCi', t("s137"), testsAndCiSignal, FORMULA.weights.experience.testsAndCi, t("s138", testFiles, ciFiles)),
+      evidence('configs', t("s120"), configSignal, FORMULA.weights.experience.configs, t("s121", configFiles)),
     ],
   };
 

@@ -15,7 +15,7 @@ const waitFor = async (condition) => {
 };
 const load = async (width, hash = '') => {
   frame.style.width = `${width}px`;
-  await new Promise(resolve => { frame.onload = resolve; frame.src = `../index.html?ui-test=${++loads}${hash}`; });
+  await new Promise(resolve => { frame.onload = resolve; frame.src = `../index.html?lang=ru&ui-test=${++loads}${hash}`; });
   await frame.contentDocument.fonts.ready;
   return frame.contentDocument;
 };
