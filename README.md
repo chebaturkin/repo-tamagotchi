@@ -1,6 +1,6 @@
-# repo tamagotchi
+**english** · [русский](README.ru.md)
 
-english · [русский](README.ru.md)
+# repo tamagotchi
 
 load a repository and meet its pet. files, languages and settings shape its appearance and five traits: energy, curiosity, resilience, chaos and experience.
 
@@ -28,7 +28,7 @@ the compact **ru / en** control changes the interface in place and keeps your so
 python3 -m http.server 4173
 ```
 
-open the [local site](http://localhost:4173). no build, packages or backend are needed. fonts and the example are included; the application has no external libraries. use a local server for the browser modules.
+open the [local site in english](http://127.0.0.1:4173/?lang=en). no build, packages or backend are needed. fonts and the example are included; the application has no external libraries. use a local server for the browser modules.
 
 ## sources
 
@@ -82,11 +82,19 @@ after starting the local server, open the test pages. results appear in the brow
 - `src/operation.test.html`: asynchronous operation management.
 - `src/ui.test.html`: responsive layout at seven widths, example, focus, feedback, snapshot restoration and zip drop.
 
-locale unit and browser checks:
+the locale unit check needs node.js. browser checks and screenshot capture also need playwright and chromium. install these optional tools in the repository root:
+
+```bash
+npm install --no-save --package-lock=false playwright
+npx playwright install chromium
+```
+
+keep the local server running, then check both languages and state preservation:
 
 ```bash
 node --test tests/i18n.test.cjs
 REPO_TAMAGOTCHI_URL=http://127.0.0.1:4173 node tests/i18n-browser.cjs
+REPO_TAMAGOTCHI_URL=http://127.0.0.1:4173 node tests/state-preservation.cjs
 ```
 
 update both language screenshot sets with:

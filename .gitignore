@@ -2,3 +2,12 @@
 .idea/
 .vscode/
 *.log
+node_modules/
+
+# Local author and agent notes
+AGENTS.md
+AGENT_PROMPT.md
+docs/superpowers/
+.codex/
+.superpowers/
+.worktrees/
